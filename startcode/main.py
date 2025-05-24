@@ -1,11 +1,14 @@
+import csv
 import pygame
 import time
 from snake import Snake
 from food import Food
+from datetime import datetime
 
 # kleuren
 kleur_achtergrond = (0, 0, 0)
 kleur_tekst = (0, 255, 0)
+kleur_score = (0,255,0)
 
 # schermgrootte
 breedte = 800
@@ -13,7 +16,7 @@ hoogte = 600
 veld_grootte = 20
 
 # Snelheid van het spel
-spel_snelheid = 5
+spel_snelheid = 10
 
 # Initialiseren van de pygame-module
 pygame.init()
@@ -28,8 +31,25 @@ def toon_score(score, venster):
     scoretekst = font.render(f"Score: {score}", True, kleur_tekst)
     venster.blit(scoretekst, (10, 10))
 
+def sla_op_in_csv(score, tijdstip):
+    with open('highscore.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([score, tijdstip])
+
+def haal_hoogste_score_op():
+    try:
+        with open('highscore.csv', mode='r') as file:
+            reader = csv.reader(file)
+            highscores = list(reader)
+            highest_score = max(int(row[0]) for row in highscores)
+            return highest_score
+
+    except FileNotFoundError:
+        return 0
+
 # Start de hoofdloop van het spel
 def game_lus():
+    global kleur_score
     food = Food(breedte, hoogte)
     snake = Snake(breedte//2, hoogte//2)
     score = 0
@@ -52,6 +72,16 @@ def game_lus():
                 elif event.key == pygame.K_DOWN and snake.y_verandering == 0:
                     snake.y_verandering = veld_grootte
                     snake.x_verandering = 0
+                elif event.key == pygame.K_p:
+                    gepauzeerd = True
+                    pauze_font = pygame.font.Font(None, 36)
+                    pauze_tekst = pauze_font.render("Pauze (Druk op P om door te gaan)", True, kleur_tekst)
+                    venster.blit(pauze_tekst, (breedte//2 - pauze_tekst.get_width()//2, hoogte//2))
+                    pygame.display.update()
+                    while gepauzeerd:
+                        for pauze_event in pygame.event.get():
+                            if pauze_event.type == pygame.KEYDOWN and pauze_event.key == pygame.K_p:
+                                gepauzeerd = False
 
         snake.beweeg()
         if snake.is_buiten_veld(breedte, hoogte) or snake.raakt_zichzelf():
@@ -59,18 +89,45 @@ def game_lus():
 
         venster.fill(kleur_achtergrond)  # Vul het scherm met een zwarte achtergrond
         food.teken(venster)
-        snake.teken(venster)
+        snake.teken(venster, kleur_score)
         toon_score(score, venster)
 
         if snake.x == food.x and snake.y == food.y:
+
             food.plaats_voedsel()
             snake.lengte_slang += 1
-            score += 10
+            score += 100
+            if score == 100:
+                kleur_score = (25, 225, 0)
+            if score == 200:
+                kleur_score = (50, 200, 0)
+            if score == 300:
+                kleur_score = (75, 175, 0)
+            if score == 400:
+                kleur_score = (100, 150, 0)
+            if score == 500:
+                kleur_score = (125, 125, 0)
+            if score == 600:
+                kleur_score = (150, 175, 0)
+            if score == 700:
+                kleur_score = (175, 200, 0)
+            if score == 800:
+                kleur_score = (200, 200, 0)
+            if score == 900:
+                r += 25.5
+                g -= 22.5
+            if score == 1000:
+                r += 25.5
+                g -= 22.5
 
         pygame.display.update()
         time.sleep(1 / spel_snelheid)
 
     print(f"Jouw score is {score}")
+    sla_op_in_csv(score, datetime.now())
+    hoogste_score = haal_hoogste_score_op()
+    print(f'De hoogste score is {hoogste_score}')
+
 
 # Start de hoofdloop van het spel
 game_lus()
